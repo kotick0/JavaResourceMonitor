@@ -9,5 +9,4 @@ public class JavaResourceMonitorApplication {
     static void main(String[] args) {
         SpringApplication.run(JavaResourceMonitorApplication.class, args);
     }
-
 }
