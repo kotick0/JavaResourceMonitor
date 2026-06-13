@@ -10,8 +10,12 @@ public class CpuMetricsMonitorTest {
     private CpuMetricsMonitor cpuMetricsMonitor;
 
     @Test
-    public void countCpuLoadOverallTest() {
-        cpuMetricsMonitor.countCpuLoadOverall();
+    public void getCpuLoadOverallTest() {
+        cpuMetricsMonitor.getCpuLoadOverall();
     }
 
+    @Test
+    public void getCpuTemperatureOverallTest() {
+        cpuMetricsMonitor.getCpuTemperatureOverall();
+    }
 }

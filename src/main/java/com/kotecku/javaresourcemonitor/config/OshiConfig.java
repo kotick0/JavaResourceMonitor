@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
+import oshi.hardware.Sensors;
 import oshi.software.os.OperatingSystem;
 
 @Configuration
@@ -22,6 +23,11 @@ public class OshiConfig {
     @Bean
     public CentralProcessor centralProcessor(SystemInfo systemInfo) {
         return systemInfo.getHardware().getProcessor();
+    }
+
+    @Bean
+    public Sensors sensors(SystemInfo systemInfo) {
+        return systemInfo.getHardware().getSensors();
     }
 }
 
