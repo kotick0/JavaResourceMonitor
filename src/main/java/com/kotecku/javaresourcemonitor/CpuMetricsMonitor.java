@@ -40,37 +40,39 @@ public class CpuMetricsMonitor { //TODO pozaminieac na zwracane dane zamiast pri
 
     @Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
     public void getCpuTemperatureOverall() {
-        if(operatingSystem.toString().contains("Windows")) {
+        if (operatingSystem.toString().contains("Windows")) {
             String[] groups = new com.sun.security.auth.module.NTSystem().getGroupIDs();
             boolean isAdmin = Arrays.asList(groups).contains("S-1-5-32-544");
-            if(!isAdmin) {
-                try {
-                    String jarPath = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsolutePath();
-                    String psCommand = "Start-Process -FilePath 'javaw' -ArgumentList '-jar \"%s\"' -Verb RunAs"
-                            .formatted(jarPath);
-                    new ProcessBuilder("powershell.exe", "-NoProfile", "-Command", psCommand)
-                            .start();
-                    System.exit(0);
-                    Components components = JSensors.get.components();
-                    List<Cpu> cpus = components.cpus;
-                    if (cpus != null && !cpus.isEmpty()) {
-                        Cpu cpu = cpus.getFirst();
-                        if (cpu.sensors != null) {
-                            // "CPU Package" to zwykle temperatura ogólna (najwyższa z corów)
-                            cpu.sensors.temperatures.stream()
-                                    .filter(t -> t.name.contains("Package") || t.name.contains("CPU"))
-                                    .findFirst()
-                                    .ifPresent(t -> System.out.println("CPU temp: " + t.value + " °C"));
-                        }
-                    }
-                } catch (URISyntaxException | IOException e) {
-                    throw new RuntimeException(e);
-                }
+
+            if (!isAdmin) {
+                relaunchAsAdmin();
+                return; // proces się zaraz zamknie
             }
 
+            Components components = JSensors.get.components();
+            List<Cpu> cpus = components.cpus;
+            if (cpus != null && !cpus.isEmpty()) {
+                cpus.getFirst().sensors.temperatures.stream()
+                        .filter(t -> t.name.contains("Package") || t.name.contains("CPU"))
+                        .findFirst()
+                        .ifPresent(t -> System.out.println("CPU temp: " + t.value + " °C"));
+            }
         } else {
             double cpuTemperature = sensors.getCpuTemperature();
             System.out.printf("CPU Temperature: %.0f C%n", cpuTemperature);
+        }
+    }
+
+    private void relaunchAsAdmin() {
+        try {
+            String jarPath = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    .getAbsolutePath();
+            String psCommand = "Start-Process -FilePath 'javaw' -ArgumentList '-jar \"%s\"' -Verb RunAs"
+                    .formatted(jarPath);
+            new ProcessBuilder("powershell.exe", "-NoProfile", "-Command", psCommand).start();
+            System.exit(0);
+        } catch (URISyntaxException | IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
