@@ -20,4 +20,17 @@ public class CpuMetricsMonitorTest {
         double cpuTemperature = cpuMetricsMonitor.getCpuTemperatureOverall();
         System.out.printf("CPU Temperature: %.0f C%n", cpuTemperature);
     }
+
+    @Test
+    public void getCpuLoadPerCoreTest() {
+        cpuMetricsMonitor.getCpuLoadPerCore();
+    }
+
+    @Test
+    public void getCpuTemperaturePerCoreTest() {
+        double[] cpuTemperatures = cpuMetricsMonitor.getCpuTemperaturePerCore();
+        for (int i = 0; i < cpuTemperatures.length; i++) {
+            System.out.printf("CPU Core %d Temperature: %.0f C%n", i, cpuTemperatures[i]);
+        }
+    }
 }

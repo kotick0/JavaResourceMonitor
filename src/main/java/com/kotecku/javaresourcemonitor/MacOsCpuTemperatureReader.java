@@ -12,8 +12,6 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -58,15 +56,15 @@ public class MacOsCpuTemperatureReader {
     }
 
     public double readOverallCpuTemperature() {
-        List<Double> coreTemps = readPerCoreCpuTemperatures();
-        return coreTemps.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+        double[] coreTemps = readPerCoreCpuTemperatures();
+        return java.util.Arrays.stream(coreTemps).max().orElse(0.0);
     }
 
-    public List<Double> readPerCoreCpuTemperatures() {
+    public double[] readPerCoreCpuTemperatures() {
         try {
             if (extractedBinary == null) {
                 log.warn("cputemp binary not available");
-                return List.of();
+                return new double[0];
             }
 
             Process process = new ProcessBuilder(extractedBinary.toString())
@@ -99,18 +97,18 @@ public class MacOsCpuTemperatureReader {
             if (!finished) {
                 process.destroyForcibly();
                 log.warn("cputemp process timed out");
-                return List.of();
+                return new double[0];
             }
 
             if (coreMap.isEmpty()) {
                 log.warn("No valid PMU2 tdie sensor values found");
-                return List.of();
+                return new double[0];
             }
 
-            return new ArrayList<>(coreMap.values());
+            return coreMap.values().stream().mapToDouble(Double::doubleValue).toArray();
         } catch (Exception e) {
             log.warn("Failed to read CPU temperatures: {}", e.getMessage());
-            return List.of();
+            return new double[0];
         }
     }
 }
