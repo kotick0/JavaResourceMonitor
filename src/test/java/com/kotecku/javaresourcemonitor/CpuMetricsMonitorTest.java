@@ -11,11 +11,13 @@ public class CpuMetricsMonitorTest {
 
     @Test
     public void getCpuLoadOverallTest() {
-        cpuMetricsMonitor.getCpuLoadOverall();
+        double cpuLoad = cpuMetricsMonitor.getCpuLoadOverall();
+        System.out.printf("CPU Load: %.0f%%%n", cpuLoad);
     }
 
     @Test
     public void getCpuTemperatureOverallTest() {
-        cpuMetricsMonitor.getCpuTemperatureOverall();
+        double cpuTemperature = cpuMetricsMonitor.getCpuTemperatureOverall();
+        System.out.printf("CPU Temperature: %.0f C%n", cpuTemperature);
     }
 }
