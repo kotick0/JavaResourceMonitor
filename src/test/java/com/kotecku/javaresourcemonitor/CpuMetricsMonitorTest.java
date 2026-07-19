@@ -23,7 +23,10 @@ public class CpuMetricsMonitorTest {
 
     @Test
     public void getCpuLoadPerCoreTest() {
-        cpuMetricsMonitor.getCpuLoadPerCore();
+        double[] cpuLoads = cpuMetricsMonitor.getCpuLoadPerCore();
+        for (int i = 0; i < cpuLoads.length; i++) {
+            System.out.printf("CPU Core %d Load: %.0f%%%n", i, cpuLoads[i]);
+        }
     }
 
     @Test

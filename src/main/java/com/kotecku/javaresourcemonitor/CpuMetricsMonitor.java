@@ -28,14 +28,15 @@ public class CpuMetricsMonitor {
     }
 
     @Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
-    public void getCpuLoadPerCore() {
+    public double[] getCpuLoadPerCore() {
         long[][] prevTicks = centralProcessor.getProcessorCpuLoadTicks();
         try {
             TimeUnit.SECONDS.sleep(1);
             double[] loadPerCore = centralProcessor.getProcessorCpuLoadBetweenTicks(prevTicks);
             for (int i = 0; i < loadPerCore.length; i++) {
-                System.out.printf("CPU Core %d Load: %.0f%%%n", i, loadPerCore[i] * 100);
+                loadPerCore[i] *= 100;
             }
+            return loadPerCore;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
