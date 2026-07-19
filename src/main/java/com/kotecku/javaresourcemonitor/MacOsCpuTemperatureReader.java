@@ -28,30 +28,32 @@ public class MacOsCpuTemperatureReader {
 
     @PostConstruct
     public void extractBinary() {
-        try (InputStream in = getClass().getResourceAsStream(RESOURCE_PATH)) {
-            if (in == null) {
-                log.warn("cputemp binary not found in classpath at {}", RESOURCE_PATH);
-                return;
-            }
-            extractedBinary = Files.createTempFile("cputemp", "");
-            Files.copy(in, extractedBinary, StandardCopyOption.REPLACE_EXISTING);
-            extractedBinary.toFile().setExecutable(true);
-
-            new ProcessBuilder("xattr", "-d", "com.apple.quarantine", extractedBinary.toString())
-                    .start()
-                    .waitFor(3, TimeUnit.SECONDS);
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    Files.deleteIfExists(extractedBinary);
-                } catch (IOException e) {
-                    log.warn("Failed to delete temp binary: {}", e.getMessage());
+        if (System.getProperty("os.arch").contains("aarch64") && System.getProperty("os.name").contains("Mac")) {
+            try (InputStream in = getClass().getResourceAsStream(RESOURCE_PATH)) {
+                if (in == null) {
+                    log.warn("cputemp binary not found in classpath at {}", RESOURCE_PATH);
+                    return;
                 }
-            }));
+                extractedBinary = Files.createTempFile("cputemp", "");
+                Files.copy(in, extractedBinary, StandardCopyOption.REPLACE_EXISTING);
+                extractedBinary.toFile().setExecutable(true);
 
-            log.info("cputemp binary extracted to {}", extractedBinary);
-        } catch (Exception e) {
-            log.warn("Failed to extract cputemp binary: {}", e.getMessage());
+                new ProcessBuilder("xattr", "-d", "com.apple.quarantine", extractedBinary.toString())
+                        .start()
+                        .waitFor(3, TimeUnit.SECONDS);
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    try {
+                        Files.deleteIfExists(extractedBinary);
+                    } catch (IOException e) {
+                        log.warn("Failed to delete temp binary: {}", e.getMessage());
+                    }
+                }));
+
+                log.info("cputemp binary extracted to {}", extractedBinary);
+            } catch (Exception e) {
+                log.warn("Failed to extract cputemp binary: {}", e.getMessage());
+            }
         }
     }
 

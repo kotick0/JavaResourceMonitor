@@ -6,6 +6,10 @@ import org.springframework.stereotype.Service;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.Sensors;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -57,7 +61,19 @@ public class CpuMetricsMonitor {
             return macOsCpuTemperatureReader.readPerCoreCpuTemperatures();
         } else {
             //FROM HERE;
-            return new double[0];
+            try {
+                for (Path hw : Files.newDirectoryStream(Paths.get("/sys/class/hwmon"), "hwmon*")) {
+                    for (Path label : Files.newDirectoryStream(hw, "temp*_label")) {
+                        String name = Files.readString(label).trim();          // e.g. "Core 0"
+                        Path input = hw.resolve(label.getFileName().toString().replace("_label", "_input"));
+                        double c = Long.parseLong(Files.readString(input).trim()) / 1000.0;
+                        System.out.printf("%s: %.1f°C%n", name, c);
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+            return new double[0];
+        }
         }
     }
