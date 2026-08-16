@@ -1,4 +1,4 @@
-package com.kotecku.javaresourcemonitor;
+package com.kotecku.javaresourcemonitor.cpu;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -7,6 +7,7 @@ import oshi.hardware.CentralProcessor;
 import oshi.hardware.Sensors;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class CpuMetricsMonitor {
+public class CpuMetricsReader {
 
     private final CentralProcessor centralProcessor;
     private final Sensors sensors;
@@ -60,16 +61,17 @@ public class CpuMetricsMonitor {
         if (System.getProperty("os.arch").contains("aarch64") && System.getProperty("os.name").contains("Mac")) {
             return macOsCpuTemperatureReader.readPerCoreCpuTemperatures();
         } else {
-            //FROM HERE;
-            try {
-                for (Path hw : Files.newDirectoryStream(Paths.get("/sys/class/hwmon"), "hwmon*")) {
-                    for (Path label : Files.newDirectoryStream(hw, "temp*_label")) {
-                        String name = Files.readString(label).trim();          // e.g. "Core 0"
-                        Path input = hw.resolve(label.getFileName().toString().replace("_label", "_input"));
-                        double c = Long.parseLong(Files.readString(input).trim()) / 1000.0;
-                        System.out.printf("%s: %.1f°C%n", name, c);
+            try (DirectoryStream<Path> hwmons = Files.newDirectoryStream(Paths.get("/sys/class/hwmon"), "hwmon*")) {
+                for (Path hw : hwmons) {
+                    try (DirectoryStream<Path> labels = Files.newDirectoryStream(hw, "temp*_label")) {
+                        for (Path label : labels) {
+                            String name = Files.readString(label).trim();
+                            Path input = hw.resolve(label.getFileName().toString().replace("_label", "_input"));
+                            double c = Long.parseLong(Files.readString(input).trim()) / 1000.0;
+                            System.out.printf("%s: %.1f°C%n", name, c);
+                        }
                     }
-                }
+                } //TODO Do zweryfikowania na bare metal Linux
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

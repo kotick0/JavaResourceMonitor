@@ -1,4 +1,4 @@
-package com.kotecku.javaresourcemonitor;
+package com.kotecku.javaresourcemonitor.cpu;
 
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -36,7 +36,9 @@ public class MacOsCpuTemperatureReader {
                 }
                 extractedBinary = Files.createTempFile("cputemp", "");
                 Files.copy(in, extractedBinary, StandardCopyOption.REPLACE_EXISTING);
-                extractedBinary.toFile().setExecutable(true);
+                if (!extractedBinary.toFile().setExecutable(true)) {
+                    throw new IOException("Couldn't set the right permissions for file: " + extractedBinary);
+                }
 
                 new ProcessBuilder("xattr", "-d", "com.apple.quarantine", extractedBinary.toString())
                         .start()
