@@ -1,15 +1,19 @@
 package com.kotecku.javaresourcemonitor.memory;
 
+import com.kotecku.javaresourcemonitor.OnMacOsCondition;
 import com.sun.jna.Memory;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 import oshi.hardware.GlobalMemory;
 
 @Component
+@Conditional(OnMacOsCondition.class)
 @RequiredArgsConstructor
-public class MacMemoryReader {
+public class MacMemoryInfoProvider implements MemoryInfoProvider {
+
     private final GlobalMemory memory;
 
     private SystemB.VMStatistics64 callVmStatistics64() {
@@ -49,7 +53,13 @@ public class MacMemoryReader {
         return sizeBuffer.getLong(0);
     }
 
-    public double getAvailableMemoryBytes() {
+    @Override
+    public long getTotalMemoryBytes() {
+        return memory.getTotal();
+    }
+
+    @Override
+    public long getAvailableMemoryBytes() {
         SystemB.VMStatistics64 stats = callVmStatistics64();
 
         long pageSize = readPageSizeFromSysctl();
@@ -58,22 +68,20 @@ public class MacMemoryReader {
         return (memory.getTotal() - used);
     }
 
-    public double getTotalMemoryBytes() {
-        return memory.getTotal();
-    }
-
-    public double getFreeMemoryBytes() {
+    @Override
+    public long getFreeMemoryBytes() {
         SystemB.VMStatistics64 stats = callVmStatistics64();
         return (stats.free_count * readPageSizeFromSysctl());
-
     }
 
-    public double getCachedMemoryBytes() {
+    @Override
+    public long getCachedMemoryBytes() {
         SystemB.VMStatistics64 stats = callVmStatistics64();
         return (stats.external_page_count * readPageSizeFromSysctl());
     }
 
-    public double getUsedMemoryBytes() {
+    @Override
+    public long getUsedMemoryBytes() {
         SystemB.VMStatistics64 stats = callVmStatistics64();
         return (stats.active_count + (long) stats.wire_count) * readPageSizeFromSysctl();
     }

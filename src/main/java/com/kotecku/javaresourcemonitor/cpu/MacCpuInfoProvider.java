@@ -1,9 +1,13 @@
 package com.kotecku.javaresourcemonitor.cpu;
 
+import com.kotecku.javaresourcemonitor.OnMacOsCondition;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+import oshi.hardware.CentralProcessor;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,9 +22,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Component
-public class MacOsCpuTemperatureReader {
+@RequiredArgsConstructor
+@Conditional(OnMacOsCondition.class)
+public class MacCpuInfoProvider implements CpuInfoProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(MacOsCpuTemperatureReader.class);
+    private final CentralProcessor centralProcessor;
+
+    private static final Logger log = LoggerFactory.getLogger(MacCpuInfoProvider.class);
     private static final Pattern PMU2_TDIE_PATTERN = Pattern.compile("^PMU2 tdie\\d+$");
     private static final String RESOURCE_PATH = "/native/macos-arm64/cputemp";
 
@@ -59,12 +67,23 @@ public class MacOsCpuTemperatureReader {
         }
     }
 
-    public double readOverallCpuTemperature() {
-        double[] coreTemps = readPerCoreCpuTemperatures();
-        return java.util.Arrays.stream(coreTemps).max().orElse(0.0);
+    @Override
+    public double[] getCpuLoadPerCore() {
+        long[][] prevTicks = centralProcessor.getProcessorCpuLoadTicks();
+        try {
+            TimeUnit.SECONDS.sleep(1);
+            double[] loadPerCore = centralProcessor.getProcessorCpuLoadBetweenTicks(prevTicks);
+            for (int i = 0; i < loadPerCore.length; i++) {
+                loadPerCore[i] *= 100;
+            }
+            return loadPerCore;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public double[] readPerCoreCpuTemperatures() {
+    @Override
+    public double[] getCpuTemperaturePerCore() {
         try {
             if (extractedBinary == null) {
                 log.warn("cputemp binary not available");
@@ -114,5 +133,22 @@ public class MacOsCpuTemperatureReader {
             log.warn("Failed to read CPU temperatures: {}", e.getMessage());
             return new double[0];
         }
+    }
+
+    @Override
+    public double getCpuLoadPercent() {
+        long[] prevTicks = centralProcessor.getSystemCpuLoadTicks();
+        try {
+            TimeUnit.SECONDS.sleep(1);
+            return centralProcessor.getSystemCpuLoadBetweenTicks(prevTicks) * 100;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public double getCpuTemperatureMax() {
+        double[] coreTemps = getCpuTemperaturePerCore();
+        return java.util.Arrays.stream(coreTemps).max().orElse(0.0);
     }
 }
