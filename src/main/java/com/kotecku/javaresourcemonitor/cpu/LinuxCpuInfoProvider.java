@@ -12,6 +12,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -39,21 +40,23 @@ public class LinuxCpuInfoProvider implements CpuInfoProvider {
 
     @Override
     public double[] getCpuTemperaturePerCore() {
+        LinkedHashMap<String, Double> cores = new LinkedHashMap<>();
         try (DirectoryStream<Path> hwmons = Files.newDirectoryStream(Paths.get("/sys/class/hwmon"), "hwmon*")) {
             for (Path hw : hwmons) {
                 try (DirectoryStream<Path> labels = Files.newDirectoryStream(hw, "temp*_label")) {
                     for (Path label : labels) {
                         String name = Files.readString(label).trim();
                         Path input = hw.resolve(label.getFileName().toString().replace("_label", "_input"));
-                        double c = Long.parseLong(Files.readString(input).trim()) / 1000.0;
-                        System.out.printf("%s: %.1f°C%n", name, c);
+                        double celsius = Long.parseLong(Files.readString(input).trim()) / 1000.0;
+                        cores.putIfAbsent(name, celsius);
                     }
                 }
-            } //TODO Do zweryfikowania na bare metal Linux
+            }
+            //TODO Do zweryfikowania na bare metal Linux
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new double[0];
+        return cores.values().stream().mapToDouble(Double::doubleValue).toArray();
     }
 
     @Override
