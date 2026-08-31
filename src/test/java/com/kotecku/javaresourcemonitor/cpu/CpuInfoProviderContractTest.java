@@ -16,8 +16,6 @@ abstract class CpuInfoProviderContractTest {
 
     protected abstract CpuInfoProvider provider();
 
-    // CPU Load per core
-
     @Test
     void getCpuLoadPerCoreShouldNotBeNull() {
         assertThat(provider().getCpuLoadPerCore()).isNotNull();
@@ -35,8 +33,6 @@ abstract class CpuInfoProviderContractTest {
             assertThat(load).isNotNaN().isBetween(MIN_LOAD, MAX_LOAD);
         }
     }
-
-    // CPU Temperature per core
 
     @Test
     void getCpuTemperaturePerCoreShouldNotBeNull() {
@@ -56,8 +52,6 @@ abstract class CpuInfoProviderContractTest {
         }
     }
 
-    // CPU Load Percent
-
     @Test
     void getCpuLoadPercentShouldNotBeNull() {
         assertThat(provider().getCpuLoadPercent()).isNotNull();
@@ -67,8 +61,6 @@ abstract class CpuInfoProviderContractTest {
     void getCpuLoadPercentShouldReturnValueBetween0And100() {
         assertThat(provider().getCpuLoadPercent()).isNotNaN().isBetween(MIN_LOAD, MAX_LOAD);
     }
-
-    //CPU Temperature Max
 
     @Test
     void getCpuTemperatureMaxShouldNotBeNull() {
