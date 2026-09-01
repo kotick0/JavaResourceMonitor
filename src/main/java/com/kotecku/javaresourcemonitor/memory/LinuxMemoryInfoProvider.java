@@ -2,30 +2,53 @@ package com.kotecku.javaresourcemonitor.memory;
 
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 @Component
-public class LinuxMemoryInfoProvider implements MemoryInfoProvider { // TODO DO zmiany zupelnie!!!
+public class LinuxMemoryInfoProvider implements MemoryInfoProvider {
+
     @Override
     public long getTotalMemoryBytes() {
-        return Long.parseLong(null);
+        return memoryReader("MemTotal");
     }
 
     @Override
     public long getAvailableMemoryBytes() {
-        return Long.parseLong(null);
+        return memoryReader("MemAvailable");
     }
 
     @Override
     public long getFreeMemoryBytes() {
-        return Long.parseLong(null);
+        return memoryReader("MemFree");
     }
 
     @Override
     public long getCachedMemoryBytes() {
-        return Long.parseLong(null);
+        return memoryReader("Cached");
     }
 
     @Override
     public long getUsedMemoryBytes() {
-        return Long.parseLong(null);
+        return getTotalMemoryBytes() - getAvailableMemoryBytes();
+    }
+
+    private long memoryReader(String key) {
+        return readMemoryInfoFromProcMeminfo().lines()
+                .filter(line -> line.startsWith(key + ":"))
+                .findFirst()
+                .map(line -> line.split(":")[1].replaceAll("kB", "").trim())
+                .map(Long::parseLong)
+                .orElseThrow(() -> new IllegalStateException("No " + key + " line found in /proc/meminfo")) * 1024;
+    }
+
+    private String readMemoryInfoFromProcMeminfo() {
+        Path meminfoPath = Path.of("/proc/meminfo");
+        try {
+            return Files.readString(meminfoPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
