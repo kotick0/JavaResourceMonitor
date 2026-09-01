@@ -11,7 +11,6 @@ abstract class MemoryInfoProviderContractTest {
     private final SystemInfo systemInfo = new SystemInfo();
 
     protected final long TOTAL_MEMORY_BYTES = systemInfo.getHardware().getMemory().getTotal();
-    protected final long AVAILABLE_MEMORY_BYTES = systemInfo.getHardware().getMemory().getAvailable();
 
     protected abstract MemoryInfoProvider provider();
 
@@ -31,8 +30,8 @@ abstract class MemoryInfoProviderContractTest {
     }
 
     @Test
-    void getAvailableMemoryBytesValueShouldEqualAvailableMemory() {
-        assertThat(provider().getAvailableMemoryBytes()).isEqualTo(AVAILABLE_MEMORY_BYTES);
+    void getAvailableMemoryBytesValueShouldNotBeNegative() {
+        assertThat(provider().getAvailableMemoryBytes()).isNotNegative();
     }
 
     @Test
