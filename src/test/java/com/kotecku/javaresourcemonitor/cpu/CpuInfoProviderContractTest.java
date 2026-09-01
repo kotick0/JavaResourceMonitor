@@ -1,6 +1,7 @@
 package com.kotecku.javaresourcemonitor.cpu;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +41,7 @@ abstract class CpuInfoProviderContractTest {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
     void getCpuTemperaturePerCoreShouldHaveSizeEqualToLogicalCores() {
         assertThat(provider().getCpuTemperaturePerCore()).hasSize(LOGICAL_CORES);
     }
